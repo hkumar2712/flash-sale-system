@@ -1,0 +1,7 @@
+# Keeps the Docker build context small and fast by excluding files
+# that the Dockerfile doesn't need (or that get generated fresh inside the build stage anyway).
+target/
+.idea/
+*.iml
+.git/
+.DS_Store

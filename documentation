@@ -1,0 +1,7 @@
+Docker steps:
+
+docker build -t user-service:0.1 .
+
+docker run -p 8081:8081 user-service:0.1
+
+curl http://localhost:8081/hello

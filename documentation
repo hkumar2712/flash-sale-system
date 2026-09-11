@@ -14,5 +14,6 @@ docker compose up --build
 
 curl http://localhost:8081/hello
 
-cmd to remove docker compose:
+cmd to use docker compose:
+docker compose up 
 docker compose down

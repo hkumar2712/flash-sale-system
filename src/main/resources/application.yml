@@ -4,3 +4,13 @@ server:
 spring:
   application:
     name: user-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:flashsale_users}
+    username: ${DB_USER:flashsale}
+    password: ${DB_PASSWORD:flashsale_dev_pw}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true

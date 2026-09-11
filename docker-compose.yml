@@ -1,31 +1,38 @@
-# Docker Compose lets us define and run multiple containers together with one command,
-# instead of typing long `docker run` commands by hand for each one.
-# Right now we only have ONE service, so the benefit isn't obvious yet —
-# but this file is exactly where Postgres, Redis, and Kafka will get added
-# in later phases, all wired together automatically.
-
 services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: flashsale-postgres
+    environment:
+      POSTGRES_DB: flashsale_users
+      POSTGRES_USER: flashsale
+      POSTGRES_PASSWORD: flashsale_dev_pw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashsale -d flashsale_users"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   user-service:
-    # "build: ." tells Compose to build an image FROM the Dockerfile in this
-    # same folder, instead of pulling a pre-made image from Docker Hub.
-    # This is the same as running `docker build .` — Compose just does it for us.
     build:
       context: .
       dockerfile: Dockerfile
-
-    # Human-readable name for the resulting container (shows up in `docker ps`).
     container_name: user-service
-
-    # Same meaning as `docker run -p 8081:8081`:
-    # <host_port>:<container_port>
     ports:
       - "8081:8081"
-
-    # Environment variables injected into the container at startup.
-    # Spring Boot automatically maps SPRING_APPLICATION_NAME to spring.application.name,
-    # SERVER_PORT to server.port, etc. (relaxed binding of env vars to config properties).
-    # We're not overriding anything yet since application.yml already has these —
-    # this is just here so you see the mechanism now, before we actually need it
-    # in Phase 2+ (e.g. injecting DB credentials without hardcoding them in the image).
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: user-service
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: flashsale_users
+      DB_USER: flashsale
+      DB_PASSWORD: flashsale_dev_pw
+
+volumes:
+  postgres_data:

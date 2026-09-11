@@ -1,10 +1,15 @@
 package com.hims.flashsale.userservice.service;
 
+import com.hims.flashsale.userservice.dto.LoginRequest;
+import com.hims.flashsale.userservice.dto.LoginResponse;
 import com.hims.flashsale.userservice.dto.RegisterRequest;
 import com.hims.flashsale.userservice.dto.RegisterResponse;
 import com.hims.flashsale.userservice.entity.User;
 import com.hims.flashsale.userservice.exception.EmailAlreadyExistsException;
+import com.hims.flashsale.userservice.exception.InvalidCredentialsException;
 import com.hims.flashsale.userservice.repository.UserRepository;
+import com.hims.flashsale.userservice.security.JwtService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,10 +32,17 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final long jwtExpirationMs;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       @Value("${jwt.expiration-ms}") long jwtExpirationMs) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.jwtExpirationMs = jwtExpirationMs;
     }
 
     public RegisterResponse register(RegisterRequest request) {
@@ -56,5 +68,24 @@ public class UserService {
         User saved = userRepository.save(user);
 
         return new RegisterResponse(saved.getId(), saved.getEmail(), saved.getRole(), saved.getCreatedAt());
+    }
+
+    public LoginResponse login(LoginRequest request) {
+        // Look up by email first. Note: we do NOT reveal at this point whether the
+        // email exists or not - both "email not found" and "password mismatch" below
+        // throw the exact same InvalidCredentialsException, with the exact same message.
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(InvalidCredentialsException::new);
+
+        // matches() re-hashes the RAW password using the same BCrypt algorithm/salt
+        // stored in the existing hash, then compares the result. We never "decrypt"
+        // the stored hash - BCrypt is one-way by design; this is the only valid way
+        // to check a password against it.
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new InvalidCredentialsException();
+        }
+
+        String token = jwtService.generateToken(user);
+        return new LoginResponse(token, jwtExpirationMs);
     }
 }

@@ -1,5 +1,7 @@
 package com.hims.flashsale.userservice.controller;
 
+import com.hims.flashsale.userservice.dto.LoginRequest;
+import com.hims.flashsale.userservice.dto.LoginResponse;
 import com.hims.flashsale.userservice.dto.RegisterRequest;
 import com.hims.flashsale.userservice.dto.RegisterResponse;
 import com.hims.flashsale.userservice.service.UserService;
@@ -45,5 +47,14 @@ public class AuthController {
         // 201 Created is the semantically correct status for "a new resource was
         // successfully created" - not 200 OK, which implies something more generic.
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+
+        // 200 OK here (not 201) - login doesn't CREATE anything new, it just
+        // returns a token for an already-existing resource (the user).
+        return ResponseEntity.ok(response);
     }
 }

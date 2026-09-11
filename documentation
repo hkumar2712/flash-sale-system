@@ -17,3 +17,15 @@ curl http://localhost:8081/hello
 cmd to use docker compose:
 docker compose up 
 docker compose down
+
+
+Authentication setup:
+
+Generate a real secret key (don't skip this):
+
+-> HS256 needs a secret at least 256 bits (32 bytes). Generate a proper random one now:
+
+cmd:
+
+bash
+openssl rand -base64 32

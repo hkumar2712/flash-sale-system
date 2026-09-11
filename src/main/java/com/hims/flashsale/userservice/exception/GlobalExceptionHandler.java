@@ -31,6 +31,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    // Catches bad login attempts (wrong email OR wrong password - deliberately
+    // indistinguishable, see InvalidCredentialsException's own comment for why).
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now());
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("error", "Unauthorized");
+        body.put("message", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
     // Catches validation failures from @Valid (e.g. blank email, short password)
     // and returns a clean, field-by-field breakdown instead of Spring's default
     // (which is more verbose and less friendly for API consumers).
